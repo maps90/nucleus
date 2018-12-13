@@ -1,0 +1,42 @@
+# Ignored folder and binary files
+debug
+vendor
+main
+main.exe
+
+# IntelliJ project files
+.idea
+.vscode
+po.go
+*.iml
+out
+gen
+
+### Go template
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+## replace command 'go run api.go' with simple one
+run.sh
+
+# Folders
+_obj
+_test
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+*.test
+*.prof

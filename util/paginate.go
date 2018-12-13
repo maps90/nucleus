@@ -1,0 +1,99 @@
+package util
+
+import (
+	"fmt"
+	"strings"
+)
+
+// PaginatedList represents a paginated list of data items.
+type PaginatedList struct {
+	Items      interface{} `json:"items"`
+	Page       int         `json:"page"`
+	PerPage    int         `json:"per_page"`
+	PageCount  int         `json:"page_count"`
+	TotalCount int         `json:"total_count"`
+	Links      Links       `json:"links"`
+}
+
+// Links type corespond to the first, prev, next, and last pagination links.
+type Links map[string]string
+
+// NewPaginatedList creates a new Paginated instance.
+// The page parameter is 1-based and refers to the current page index/number.
+// The perPage parameter refers to the number of items on each page.
+// And the total parameter specifies the total number of data items.
+// If total is less than 0, it means total is unknown.
+func NewPaginatedList(page, perPage, total int) *PaginatedList {
+	if perPage < 1 {
+		perPage = 100
+	}
+	pageCount := -1
+	if total >= 0 {
+		pageCount = (total + perPage - 1) / perPage
+
+	}
+	if page < 1 {
+		page = 1
+	}
+
+	return &PaginatedList{
+		Page:       page,
+		PerPage:    perPage,
+		TotalCount: total,
+		PageCount:  pageCount,
+	}
+}
+
+// Offset returns the OFFSET value that can be used in a SQL statement.
+func (p *PaginatedList) Offset() int {
+	return (p.Page - 1) * p.PerPage
+}
+
+// Limit returns the LIMIT value that can be used in a SQL statement.
+func (p *PaginatedList) Limit() int {
+	return p.PerPage
+}
+
+// BuildLinks returns the first, prev, next, and last links corresponding to the pagination.
+// A link could be an empty string if it is not needed.
+// For example, if the pagination is at the first page, then both first and prev links
+// will be empty.
+func (p *PaginatedList) BuildLinks(baseURL string) Links {
+	var link [4]string
+
+	pageCount := p.PageCount
+	page := p.Page
+	if pageCount >= 0 && page > pageCount {
+		page = pageCount
+	}
+	if strings.Contains(baseURL, "?") {
+		baseURL += "&"
+	} else {
+		baseURL += "?"
+	}
+	link[0] = fmt.Sprintf("%vpage=%v", baseURL, 1)
+	link[3] = fmt.Sprintf("%vpage=%v", baseURL, p.PageCount)
+
+	if page > 1 {
+		link[0] = fmt.Sprintf("%vpage=%v", baseURL, 1)
+		link[1] = fmt.Sprintf("%vpage=%v", baseURL, page-1)
+	}
+	if pageCount >= 0 && page < pageCount {
+		link[2] = fmt.Sprintf("%vpage=%v", baseURL, page+1)
+	} else if pageCount < 0 {
+		link[2] = fmt.Sprintf("%vpage=%v", baseURL, page+1)
+	}
+
+	for i := 0; i < 4; i++ {
+		if link[i] != "" {
+			link[i] += fmt.Sprintf("&per_page=%v", p.PerPage)
+		}
+	}
+
+	return Links{
+		"first": link[0],
+		"prev":  link[1],
+		"next":  link[2],
+		"last":  link[3],
+	}
+}
