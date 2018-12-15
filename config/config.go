@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/gommon/color"
 	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote" // required for remote access
 )
 
 var v *viper.Viper
