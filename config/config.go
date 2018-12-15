@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/labstack/gommon/color"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +19,7 @@ func init() {
 const ErrMsgTmpl = "something went wrong. Error: %s"
 const defaultBaseConfig = "/resources"
 
+// NewEnv feed environment variable into config package
 func NewEnv(prefix string) {
 	v.SetEnvPrefix(prefix)
 	v.AutomaticEnv()
@@ -28,6 +30,7 @@ func NewEnv(prefix string) {
 func New(args ...string) (err error) {
 	var configName = "application"
 	var baseConfig string
+	var remoteConfigName string
 
 	if len(args) > 0 {
 		configName = args[0]
@@ -37,15 +40,30 @@ func New(args ...string) (err error) {
 		baseConfig = args[1]
 	}
 
+	if len(args) == 3 && args[2] != "" {
+		baseConfig = args[2]
+	}
+
 	path, err := os.Getwd()
 	if err != nil {
-		return err
+		return fmt.Errorf(ErrMsgTmpl, err)
 	}
 
 	if baseConfig == "" {
 		baseConfig = path + defaultBaseConfig
 	}
 
+	// find consul environment variables
+	url := os.Getenv("CONSUL_URL")
+	if url == "" {
+		color.Println(color.Green(fmt.Sprintf("⇨ using local config: '%v/%v.yaml'", baseConfig, configName)))
+		return localConfig(configName, baseConfig)
+	}
+
+	return remoteConfig(url, remoteConfigName)
+}
+
+func localConfig(configName, baseConfig string) error {
 	v.SetConfigName(configName)
 	v.SetConfigType("yaml")
 	v.AddConfigPath(baseConfig)
@@ -53,8 +71,34 @@ func New(args ...string) (err error) {
 	if err := v.ReadInConfig(); err != nil {
 		return fmt.Errorf(ErrMsgTmpl, err)
 	}
+	return nil
+}
 
-	return
+func remoteConfig(url string, conf string) (err error) {
+	err = v.AddRemoteProvider("consul", url, conf)
+	if err != nil {
+		return fmt.Errorf(ErrMsgTmpl, err)
+	}
+
+	v.SetConfigType("yaml")
+	// read from remote config.
+	if err := v.ReadRemoteConfig(); err != nil {
+		return fmt.Errorf(ErrMsgTmpl, err)
+	}
+
+	// hot-reload config
+	go func() {
+		for {
+			time.Sleep(time.Second * 60) // delay after each request
+			err := v.WatchRemoteConfig()
+			if err != nil {
+				color.Println(color.Green("unable to read remote config."))
+				continue
+			}
+		}
+	}()
+
+	return nil
 }
 
 // Set sets the value for the key in the override regiser.
