@@ -31,7 +31,7 @@ func NewEnv(prefix string) {
 func New(args ...string) (err error) {
 	var configName = "application"
 	var baseConfig string
-	var remoteConfigName string
+	var remoteConfigName = v.GetString("GLOBAL.remoteConfigName")
 
 	if len(args) > 0 {
 		configName = args[0]
@@ -39,10 +39,6 @@ func New(args ...string) (err error) {
 
 	if len(args) == 2 && args[1] != "" {
 		baseConfig = args[1]
-	}
-
-	if len(args) == 3 && args[2] != "" {
-		baseConfig = args[2]
 	}
 
 	path, err := os.Getwd()
@@ -61,7 +57,7 @@ func New(args ...string) (err error) {
 		return localConfig(configName, baseConfig)
 	}
 
-	return remoteConfig(url, remoteConfigName)
+	return remoteConfig(url, remoteConfigName, configName, baseConfig)
 }
 
 func localConfig(configName, baseConfig string) error {
@@ -75,16 +71,25 @@ func localConfig(configName, baseConfig string) error {
 	return nil
 }
 
-func remoteConfig(url string, conf string) (err error) {
-	err = v.AddRemoteProvider("consul", url, conf)
+// SetRemoteConfigProvider configuration
+func SetRemoteConfigProvider(name, filename string) {
+	v.Set("GLOBAL.remoteProvider", name)
+	v.Set("GLOBAL.remoteConfigName", filename)
+}
+
+func remoteConfig(url string, conf, configName, baseConfig string) (err error) {
+	color.Println("⇨ read config from:", color.Green(url), "...")
+	err = v.AddRemoteProvider(v.GetString("GLOBAL.remoteProvider"), url, conf)
 	if err != nil {
-		return fmt.Errorf(ErrMsgTmpl, err)
+		fmt.Println("⇨ fallback to local config.")
+		return localConfig(configName, baseConfig)
 	}
 
 	v.SetConfigType("yaml")
 	// read from remote config.
 	if err := v.ReadRemoteConfig(); err != nil {
-		return fmt.Errorf(ErrMsgTmpl, err)
+		fmt.Println("⇨ fallback to local config.")
+		return localConfig(configName, baseConfig)
 	}
 
 	// hot-reload config
