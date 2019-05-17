@@ -2,10 +2,10 @@ package errors
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo"
-	"github.com/maps90/nucleus/config"
 )
 
 type (
@@ -53,7 +53,7 @@ func NewAPIError(c echo.Context, code string, params Params) *APIError {
 
 	if template, ok := templates[code]; ok {
 		err.Message = template.getMessage(params)
-		if config.Get("env") != "production" {
+		if os.Getenv("ENV") != "production" {
 			err.DeveloperMessage = template.getDeveloperMessage(params)
 		}
 	}

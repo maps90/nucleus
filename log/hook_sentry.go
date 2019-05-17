@@ -3,19 +3,20 @@ package log
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/evalphobia/logrus_sentry"
-	"github.com/maps90/nucleus/config"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 )
 
 // AddSentryHook logrus
 func AddSentryHook() {
-	if !config.GetBool("sentry.enabled") {
+	if !cast.ToBool(os.Getenv("sentry.enabled")) {
 		return
 	}
 
-	dsn := config.GetString("sentry.dsn")
+	dsn := os.Getenv("sentry.dsn")
 	hook, err := logrus_sentry.NewSentryHook(dsn, []logrus.Level{
 		logrus.PanicLevel,
 		logrus.FatalLevel,
