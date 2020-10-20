@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/bitly/go-nsq"
-	"github.com/maps90/nucleus/config"
 )
 
 var (
@@ -56,7 +56,7 @@ func connect() (Publisher, error) {
 		return publisher, nil
 	}
 	configNSQ := nsq.NewConfig()
-	client, err := nsq.NewProducer(config.GetString("nsq.publisher"), configNSQ)
+	client, err := nsq.NewProducer(os.Getenv("NSQ_PUBLISHER"), configNSQ)
 	if err != nil {
 		return nil, err
 	}

@@ -30,3 +30,16 @@ func NewHandler(ctxFunc ContextFunc) echo.HandlerFunc {
 		return ctxFunc(&Context{c})
 	}
 }
+
+func (c *Context) ReturnJSON(a interface{},b error) error {
+	if b != nil {
+		return b
+	}
+
+	return c.JSONR(a)
+}
+
+// GetContext return request context
+func (c *Context) GetContext() context.Context {
+	return c.Request().Context()
+}

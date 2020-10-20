@@ -13,6 +13,7 @@ type validationError struct {
 	Error string `json:"error"`
 }
 
+// Errors struct
 type Errors struct {
 	ctx echo.Context
 }

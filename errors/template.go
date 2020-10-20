@@ -2,12 +2,10 @@ package errors
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo"
-	"github.com/maps90/nucleus/config"
-	"gopkg.in/yaml.v2"
 )
 
 type (
@@ -20,21 +18,28 @@ type (
 	}
 )
 
-var templates map[string]errorTemplate
+var templates = map[string]errorTemplate{
+	"Internal Server Error": errorTemplate{
+		Message:          "We have encountered an internal server error.",
+		DeveloperMessage: "Internal Server Error: {error}",
+	},
+	"Not Found": errorTemplate{
+		Message: "{resource} was not found.",
+	},
 
-// LoadMessages reads a YAML file containing error templates.
-func LoadMessages(args ...string) error {
-	file := "resources/errors.yml"
-	if len(args) > 0 {
-		file = args[0]
-	}
+	"Unauthorized": errorTemplate{
+		Message:          "Authentication failed.",
+		DeveloperMessage: "Authentication failed: {error}",
+	},
 
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	templates = map[string]errorTemplate{}
-	return yaml.Unmarshal(bytes, &templates)
+	"Invalid Data": errorTemplate{
+		Message: "There is some problem with the data you submitted. See \"details\" for more information.",
+	},
+
+	"Bad Request": errorTemplate{
+		Message:          "Missing required parameter.",
+		DeveloperMessage: "Bad Request: {error}",
+	},
 }
 
 // NewAPIError creates a new APIError with the given HTTP status code, error code, and parameters for replacing placeholders in the error template.
@@ -48,7 +53,7 @@ func NewAPIError(c echo.Context, code string, params Params) *APIError {
 
 	if template, ok := templates[code]; ok {
 		err.Message = template.getMessage(params)
-		if config.Get("env") != "production" {
+		if os.Getenv("ENV") != "production" {
 			err.DeveloperMessage = template.getDeveloperMessage(params)
 		}
 	}

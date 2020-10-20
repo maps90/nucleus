@@ -1,5 +1,6 @@
 package errors
 
+// APIError struct
 type APIError struct {
 	RequestID string `json:"request_id"`
 	// Status is http status code
