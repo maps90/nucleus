@@ -30,11 +30,16 @@ func New() *Config {
 	h := &Config{
 		Echo: echo.New(),
 	}
+
+	if c != nil {
+		return c
+	}
+
 	return h
 }
 
-// GetConfig gets the global httpx instance.
-func GetConfig() *Config {
+// Setup gets the global httpx instance.
+func Setup() *Config {
 	return c
 }
 
