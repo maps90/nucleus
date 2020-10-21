@@ -27,15 +27,13 @@ type ConfFunc func(*Config) error
 
 // New HTTP server
 func New() *Config {
-	h := &Config{
-		Echo: echo.New(),
-	}
-
 	if c != nil {
 		return c
 	}
 
-	return h
+	return &Config{
+		Echo: echo.New(),
+	}
 }
 
 // Setup gets the global httpx instance.
